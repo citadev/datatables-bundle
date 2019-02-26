@@ -122,8 +122,14 @@ class DataTableState
             $column = $this->dataTable->getColumn((int) $key);
             $value = $this->isInitial ? $search : $search['search']['value'];
 
-            if ($column->isSearchable() && !empty($value) && null !== $column->getFilter() && $column->getFilter()->isValidValue($value)) {
-                $this->setColumnSearch($column, $value);
+            if ($column->isSearchable() && !empty($value) && null !== $column->getFilter()) {
+                foreach ($column->getFilter() as $filter)
+                {
+                    if ($filter->isValidValue($value)) {
+                        $this->setColumnSearch($column, $value);
+                    }
+                }
+
             }
         }
     }
