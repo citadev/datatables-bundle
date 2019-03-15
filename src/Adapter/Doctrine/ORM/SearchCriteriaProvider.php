@@ -15,8 +15,8 @@ namespace Omines\DataTablesBundle\Adapter\Doctrine\ORM;
 use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\QueryBuilder;
 use Omines\DataTablesBundle\Column\AbstractColumn;
+use Omines\DataTablesBundle\Column\DateTimeColumn;
 use Omines\DataTablesBundle\DataTableState;
-use Omines\DataTablesBundle\Adapter\Doctrine\ORM\QueryBuilderProcessorInterface;
 
 /**
  * SearchCriteriaProvider.
@@ -44,10 +44,30 @@ class SearchCriteriaProvider implements QueryBuilderProcessorInterface
             /** @var AbstractColumn $column */
             $column = $searchInfo['column'];
             $search = $searchInfo['search'];
-
             if (!empty($search) && null !== ($filter = $column->getFilter())) {
                 foreach ($column->getFilter() as $filter) {
-                    $queryBuilder->andWhere(new Comparison($column->getField(), $filter->getOperator(), $queryBuilder->expr()->literal($column->getRightExpr($search))));
+                    //var_dump($column);
+                    if ('=' === $filter->getOperator())
+                    {
+                        $queryBuilder->andWhere(new Comparison($column->getField(), $filter->getOperator(), $queryBuilder->expr()->literal($search)));
+                    }
+                    else
+                    {
+                        if ($column instanceof DateTimeColumn)
+                        {
+                            $column->setOption('rightExpr' ,function ($value) {
+                                $value = str_replace('/', '-', $value);
+                                $arrDate = explode('-', $value);
+                                $arrDate = array_reverse($arrDate);
+                                $value = implode('-', $arrDate);
+                                return '%' . $value . '%';
+                            });
+                        }
+
+                        $queryBuilder->andWhere(new Comparison($column->getField(), $filter->getOperator(), $queryBuilder->expr()->literal($column->getRightExpr($search))));
+
+                    }
+
                 }
             }
         }
